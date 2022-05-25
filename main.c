@@ -11,6 +11,7 @@ Value global = nil;
 Value eval_read(Value *ctx, Value *args)
 {
 	Value v = nil;
+	double n;
 	int ch, i;
 
 	for (;;) {
@@ -19,22 +20,14 @@ Value eval_read(Value *ctx, Value *args)
 		if (ch == ';') {
 			while ((ch = getchar()) != '\n')
 				;
-		} else break;
+		} else if (ch < 0)
+		 	exit(0);
+		else break;
 	}
 	if (ch == '\"') {
 		set(&v, make(TString));
 		for (i = 0; (ch = getchar()) != '\"' && ch > 0; i++)
 			string(&v, i) = ch;
-	} else if (isalpha(ch)) {
-		ungetc(ch, stdin);
-		set(&v, make(TSymbol));
-		for (i = 0; isalpha(ch = getchar()) || ch == '-'; i++)
-			string(&v, i) = ch;
-		ungetc(ch, stdin);
-	} else if (isdigit(ch) || ch == '-') {
-		ungetc(ch, stdin);
-		set(&v, make(TNumber));
-		scanf("%lf", &v.number);
 	} else if (ch == '(') {
 		Value elem = nil;
 		set(&v, make(TList));
@@ -43,6 +36,16 @@ Value eval_read(Value *ctx, Value *args)
 		delete(&elem);
 	} else if (ch == ')') {
 		set(&v, make(TNil));
+	} else {
+		ungetc(ch, stdin);
+		set(&v, make(TSymbol));
+		for (i = 0; !isspace(ch = getchar()) && !strchr("();", ch); i++)
+			string(&v, i) = ch;
+		ungetc(ch, stdin);
+		if (sscanf(v.symbol->d, "%lf", &n) > 0) {
+			set(&v, make(TNumber));
+			v.number = n;
+		}
 	}
 	unmark(&v);
 	return v;
