@@ -199,9 +199,9 @@ int init(Value *ctx)
 
 	/* maps and lists system */
 	setvar(ctx, "map", cfunc(eval_map_literal));
-	setvar(ctx, "map-field", cfunc(eval_map_field));
+	setvar(ctx, "map-get", cfunc(eval_map_field));
 	setvar(ctx, "list", cfunc(eval_list_literal));
-	setvar(ctx, "list-field", cfunc(eval_list_field));
+	setvar(ctx, "list-get", cfunc(eval_list_field));
 
 	/* expression system */
 	setvar(ctx, "len", cfunc(eval_len));
