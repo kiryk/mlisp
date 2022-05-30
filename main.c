@@ -42,6 +42,7 @@ Value parse(FILE *f)
 		for (i = 0; !isspace(ch = fgetc(f)) && !strchr("();", ch); i++)
 			string(&v, i) = ch;
 		ungetc(ch, f);
+		nullterm(v.symbol);
 		if (sscanf(v.symbol->d, "%lf", &n) > 0) {
 			set(&v, make(TNumber));
 			v.number = n;

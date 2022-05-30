@@ -10,6 +10,8 @@
 
 #define cfunc(f) ((Value){.type = TFunc, .func = f})
 
+#define nullterm(s) (vector(char, (s), (s)->len), (s)->len--)
+
 enum Type {
 	TNil    = 0,
 	TFunc   = 1 << 0,
