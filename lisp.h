@@ -81,7 +81,7 @@ void setvar(Value *map, char *key, Value v);
 
 /* debug.c */
 Value eval_write(Value *ctx, Value *args);
-Value eval_info(Value *ctx, Value *args);
+Value eval_debug(Value *ctx, Value *args);
 void dump(Value*, int);
 
 /* expr.c */

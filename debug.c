@@ -58,7 +58,7 @@ Value eval_write(Value *ctx, Value *args)
 	return v;
 }
 
-Value eval_info(Value *ctx, Value *args)
+Value eval_debug(Value *ctx, Value *args)
 {
 	extern int _objects;
 

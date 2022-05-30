@@ -199,7 +199,7 @@ int init(Value *ctx)
 	setvar(ctx, "fn", cfunc(eval_lambda));
 
 	/* debugging system */
-	setvar(ctx, "info", cfunc(eval_info));
+	setvar(ctx, "debug", cfunc(eval_debug));
 	setvar(ctx, "write", cfunc(eval_write));
 
 	/* maps and lists system */
