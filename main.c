@@ -8,9 +8,8 @@ Value run_lambda(Value *ctx, Value *lbd, Value *args);
 
 Value global = nil;
 
-Value parse(FILE *f)
+int parse(Value *v, FILE *f)
 {
-	Value v = nil;
 	double n;
 	int ch, i;
 
@@ -21,40 +20,68 @@ Value parse(FILE *f)
 			while ((ch = fgetc(f)) != '\n')
 				;
 		} else if (ch < 0)
-		 	exit(0);
+		 	return ch;
 		else break;
 	}
 	if (ch == '\"') {
-		set(&v, make(TString));
+		set(v, make(TString));
 		for (i = 0; (ch = fgetc(f)) != '\"' && ch > 0; i++)
-			string(&v, i) = ch;
+			string(v, i) = ch;
 	} else if (ch == '(') {
 		Value elem = nil;
-		set(&v, make(TList));
-		for (i = 0; (elem = parse(f)).type != TNil; i++)
-			set(&list(&v, i), elem);
+		set(v, make(TList));
+		for (i = 0; parse(&elem, f) >= 0 && elem.type != TNil; i++)
+			set(&list(v, i), elem);
 		delete(&elem);
 	} else if (ch == ')') {
-		set(&v, make(TNil));
+		set(v, make(TNil));
 	} else {
 		ungetc(ch, f);
-		set(&v, make(TSymbol));
+		set(v, make(TSymbol));
 		for (i = 0; !isspace(ch = fgetc(f)) && !strchr("();", ch); i++)
-			string(&v, i) = ch;
+			string(v, i) = ch;
 		ungetc(ch, f);
-		nullterm(v.symbol);
-		if (sscanf(v.symbol->d, "%lf", &n) > 0) {
-			set(&v, make(TNumber));
-			v.number = n;
+		nullterm(v->symbol);
+		if (sscanf(v->symbol->d, "%lf", &n) > 0) {
+			set(v, make(TNumber));
+			v->number = n;
 		}
 	}
-	unmark(&v);
-	return v;
+	return v->type;
 }
 
 Value eval_read(Value *ctx, Value *args)
 {
-	return parse(stdin);
+	Value v = nil;
+
+	parse(&v, stdin);
+	unmark(&v);
+	return v;
+}
+
+Value eval_import(Value *ctx, Value *args)
+{
+	FILE *f;
+	Value s = nil, e = nil, r = nil;
+
+	set(&s, eval(ctx, &list(args, 1)));
+	if (s.type != TString) {
+		delete(&s);
+		return r;
+	}
+
+	nullterm(s.string);
+	if (!(f = fopen(s.string->d, "r"))) {
+		fprintf(stderr, "error: could not open: %s\n", s.string->d);
+		exit(1);
+	}
+	delete(&s);
+
+	while (parse(&e, f) >= 0)
+		set(&r, eval(ctx, &e));
+	delete(&e);
+	unmark(&r);
+	return r;
 }
 
 Value eval_print(Value *ctx, Value *args)
@@ -193,6 +220,7 @@ int init(Value *ctx)
 	/* base system */
 	setvar(ctx, "eval", cfunc(eval_eval));
 	setvar(ctx, "read", cfunc(eval_read));
+	setvar(ctx, "import", cfunc(eval_import));
 	setvar(ctx, "print", cfunc(eval_print));
 	setvar(ctx, "quote", cfunc(eval_quote));
 	setvar(ctx, "set", cfunc(eval_set));
@@ -238,7 +266,7 @@ int main(int argc, char *argv[])
 
 	if (argc > 1) {
 		if (!(f = fopen(argv[1], "r"))) {
-			fprintf(stderr, "%s: could not open: %s\n", argv[0], argv[1]);
+			fprintf(stderr, "error: could not open: %s\n", argv[1]);
 			exit(1);
 		}
 	} else {
@@ -251,7 +279,8 @@ int main(int argc, char *argv[])
 			printf("> ");
 			fflush(stdout);
 		}
-		set(&e, parse(f));
+		if (parse(&e, f) < 0)
+			break;
 		set(&r, eval(&global, &e));
 	}
 	exit(0);
