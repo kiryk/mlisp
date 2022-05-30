@@ -74,7 +74,7 @@ Value eval_map_literal(Value *ctx, Value *args)
 	return m;
 }
 
-Value eval_map_field(Value *ctx, Value *args)
+Value eval_map_get(Value *ctx, Value *args)
 {
 	Value m = nil, k = nil, v = make(TWeak);
 
@@ -98,7 +98,7 @@ Value eval_list_literal(Value *ctx, Value *args)
 	return l;
 }
 
-Value eval_list_field(Value *ctx, Value *args)
+Value eval_list_get(Value *ctx, Value *args)
 {
 	Value l = nil, i = nil, v = make(TWeak);
 
