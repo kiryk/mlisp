@@ -8,17 +8,17 @@ Value run_lambda(Value *ctx, Value *lbd, Value *args);
 
 Value global = nil;
 
-Value eval_read(Value *ctx, Value *args)
+Value parse(FILE *f)
 {
 	Value v = nil;
 	double n;
 	int ch, i;
 
 	for (;;) {
-		while (isspace(ch = getchar()))
+		while (isspace(ch = fgetc(f)))
 			;
 		if (ch == ';') {
-			while ((ch = getchar()) != '\n')
+			while ((ch = fgetc(f)) != '\n')
 				;
 		} else if (ch < 0)
 		 	exit(0);
@@ -26,22 +26,22 @@ Value eval_read(Value *ctx, Value *args)
 	}
 	if (ch == '\"') {
 		set(&v, make(TString));
-		for (i = 0; (ch = getchar()) != '\"' && ch > 0; i++)
+		for (i = 0; (ch = fgetc(f)) != '\"' && ch > 0; i++)
 			string(&v, i) = ch;
 	} else if (ch == '(') {
 		Value elem = nil;
 		set(&v, make(TList));
-		for (i = 0; (elem = eval_read(ctx, 0)).type != TNil; i++)
+		for (i = 0; (elem = parse(f)).type != TNil; i++)
 			set(&list(&v, i), elem);
 		delete(&elem);
 	} else if (ch == ')') {
 		set(&v, make(TNil));
 	} else {
-		ungetc(ch, stdin);
+		ungetc(ch, f);
 		set(&v, make(TSymbol));
-		for (i = 0; !isspace(ch = getchar()) && !strchr("();", ch); i++)
+		for (i = 0; !isspace(ch = fgetc(f)) && !strchr("();", ch); i++)
 			string(&v, i) = ch;
-		ungetc(ch, stdin);
+		ungetc(ch, f);
 		if (sscanf(v.symbol->d, "%lf", &n) > 0) {
 			set(&v, make(TNumber));
 			v.number = n;
@@ -49,6 +49,11 @@ Value eval_read(Value *ctx, Value *args)
 	}
 	unmark(&v);
 	return v;
+}
+
+Value eval_read(Value *ctx, Value *args)
+{
+	return parse(stdin);
 }
 
 Value eval_print(Value *ctx, Value *args)
@@ -224,13 +229,28 @@ int init(Value *ctx)
 	setvar(ctx, "not", cfunc(eval_not));
 }
 
-int main(int argc)
+int main(int argc, char *argv[])
 {
+	int i;
+	FILE *f;
 	Value e = nil, r = nil;
+
+	if (argc > 1) {
+		if (!(f = fopen(argv[1], "r"))) {
+			fprintf(stderr, "%s: could not open: %s\n", argv[0], argv[1]);
+			exit(1);
+		}
+	} else {
+		f = stdin;
+	}
 
 	init(&global);
 	for (;;) {
-		set(&e, eval_read(&global, 0));
+		if (f == stdin) {
+			printf("> ");
+			fflush(stdout);
+		}
+		set(&e, parse(f));
 		set(&r, eval(&global, &e));
 	}
 	exit(0);

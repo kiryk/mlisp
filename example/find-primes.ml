@@ -1,7 +1,10 @@
 (def primes (list))
-(def n 100)
+(def n 0)
 (def p 2)
 (def i 0)
+
+(print "the number of primes to be found:")
+(set n (read))
 
 (while (< (len primes) n) (do
 	(set i 0)
