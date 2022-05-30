@@ -10,9 +10,9 @@ void dump(Value *v, int indent)
 	case TNil:
 		printf("nil"); break;
 	case TFunc:
-		printf("[func %x]", (void*)v->func); break;
+		printf("[func 0x%08x]", (unsigned)(long unsigned)v->func); break;
 	case TWeak:
-		printf("[ref %x]", (void*)v->weak); break;
+		printf("[ref 0x%08x]", (unsigned)(long unsigned)v->weak); break;
 	case TNumber:
 		printf("%lg", v->number); break;
 	case TSymbol:
