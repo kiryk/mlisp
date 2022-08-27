@@ -213,7 +213,7 @@ Value run_lambda(Value *ctx, Value *lbd, Value *args)
 	return v;
 }
 
-int init(Value *ctx)
+void init(Value *ctx)
 {
 	set(ctx, make(TList));
 
