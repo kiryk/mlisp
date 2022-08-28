@@ -1,7 +1,7 @@
 CC = cc
 LD = ld
 
-FLAGS = -Wall -Werror
+FLAGS = -Wall -Werror -ansi
 
 OBJS = \
 	debug.o \
