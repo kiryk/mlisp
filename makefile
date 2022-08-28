@@ -1,5 +1,4 @@
 CC = cc
-LD = ld
 
 FLAGS = -Wall -Werror -ansi
 
@@ -15,7 +14,7 @@ mlisp: $(OBJS)
 	$(CC) $(FLAGS) -o mlisp $(OBJS)
 
 %.o: %.c
-	$(CC) -o $@ -c $<
+	$(CC) $(FLAGS) -o $@ -c $<
 
 clean:
 	rm mlisp $(OBJS)

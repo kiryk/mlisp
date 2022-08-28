@@ -55,7 +55,7 @@ Value *getvar(Value *map, char *key)
 	Value *r, k = nil;
 
 	set(&k, make(TSymbol));
-	string(&k, len-1);
+	string(&k, len-1) = '\0';
 	strncpy(k.symbol->d, key, len);
 	r = mapget(map, &k);
 	delete(&k);

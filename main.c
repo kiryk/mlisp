@@ -72,7 +72,7 @@ Value eval_import(Value *ctx, Value *args)
 
 	nullterm(s.string);
 	if (!(f = fopen(s.string->d, "r"))) {
-		fprintf(stderr, "error: could not open: %s\n", s.string->d);
+		fprintf(stderr, "error: could not open: %s\n", (char *)s.string->d);
 		exit(1);
 	}
 	delete(&s);
@@ -154,7 +154,6 @@ Value eval_quote(Value *ctx, Value *args)
 Value eval_eval(Value *ctx, Value *args)
 {
 	Value v = nil;
-	int i;
 
 	if (args->list->len > 1)
 		set(&v, eval(ctx, &list(args, 1)));
@@ -166,7 +165,6 @@ Value eval_eval(Value *ctx, Value *args)
 Value eval_weak(Value *ctx, Value *args)
 {
 	Value v = nil, *scope = ctx;
-	int i;
 
 	if (args->type == TSymbol) {
 		set(&v, make(TWeak));
@@ -266,7 +264,6 @@ void init(Value *ctx)
 
 int main(int argc, char *argv[])
 {
-	int i;
 	FILE *f;
 	Value e = nil, r = nil;
 
