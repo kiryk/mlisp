@@ -135,8 +135,9 @@ Value eval_lambda(Value *ctx, Value *args)
 	int i;
 
 	set(&v, make(TList));
+	set(&list(&v, 0), *ctx);
 	for (i = 1; i < args->list->len; i++)
-		set(&list(&v, i-1), list(args, i));
+		set(&list(&v, i), list(args, i));
 	unmark(&v);
 	return v;
 }
@@ -164,14 +165,17 @@ Value eval_eval(Value *ctx, Value *args)
 
 Value eval_weak(Value *ctx, Value *args)
 {
-	Value v = nil;
+	Value v = nil, *scope = ctx;
 	int i;
 
 	if (args->type == TSymbol) {
 		set(&v, make(TWeak));
-		v.weak = mapget(ctx, args);
-		if (v.weak->type == TNil)
-			v.weak = mapget(&global, args);
+		while (scope->type != TNil) {
+			v.weak = mapget(scope, args);
+			if (v.weak->type != TNil)
+				break;
+			scope = getvar(scope, " ");
+		}
 		unmark(&v);
 		return v;
 	}
@@ -199,14 +203,16 @@ Value eval(Value *ctx, Value *args)
 
 Value run_lambda(Value *ctx, Value *lbd, Value *args)
 {
-	Value lclctx = make(TList);
-	Value *vars = &list(lbd, 0);
+	Value *vars = &list(lbd, 1);
+	Value lclctx = nil;
 	Value v = nil;
 	int i;
 
+	set(&lclctx, make(TList));
+	setvar(&lclctx, " ", list(lbd, 0));
 	for (i = 0; i < vars->list->len; i++)
 		set(mapget(&lclctx, &list(vars, i)), eval(ctx, &list(args, i+1)));
-	for (i = 1; i < lbd->list->len; i++)
+	for (i = 2; i < lbd->list->len; i++)
 		set(&v, eval(&lclctx, &list(lbd, i)));
 	delete(&lclctx);
 	unmark(&v);

@@ -79,6 +79,7 @@ Value eval_list_literal(Value *ctx, Value *args);
 Value eval_list_get(Value *ctx, Value *args);
 Value *mapget(Value *map, Value *key);
 int cmp(Value *a, Value *b);
+Value *getvar(Value *map, char *key);
 void setvar(Value *map, char *key, Value v);
 
 /* debug.c */

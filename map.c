@@ -49,16 +49,22 @@ Value *mapget(Value *map, Value *key)
 	return &list(group, i+1); /* new undefined nil value */
 }
 
-void setvar(Value *map, char *key, Value v)
+Value *getvar(Value *map, char *key)
 {
 	int len = strlen(key);
-	Value k = nil;
+	Value *r, k = nil;
 
 	set(&k, make(TSymbol));
 	string(&k, len-1);
 	strncpy(k.symbol->d, key, len);
-	set(mapget(map, &k), v);
+	r = mapget(map, &k);
 	delete(&k);
+	return r;
+}
+
+void setvar(Value *map, char *key, Value v)
+{
+	set(getvar(map, key), v);
 }
 
 /* interfaces for map and list usage inside the language */
