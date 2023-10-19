@@ -30,9 +30,10 @@ int parse(Value *v, FILE *f)
 	} else if (ch == '(') {
 		Value elem = nil;
 		set(v, make(TList));
-		for (i = 0; parse(&elem, f) >= 0 && elem.type != TNil; i++)
+		for (i = 0; parse(&elem, f) >= 0 && elem.type != TNil; i++) {
 			set(&list(v, i), elem);
-		delete(&elem);
+			track(&elem);
+		}
 	} else if (ch == ')') {
 		set(v, make(TNil));
 	} else {
@@ -55,7 +56,6 @@ Value eval_read(Value *ctx, Value *args)
 	Value v = nil;
 
 	parse(&v, stdin);
-	unmark(&v);
 	return v;
 }
 
@@ -66,7 +66,7 @@ Value eval_import(Value *ctx, Value *args)
 
 	set(&s, eval(ctx, &list(args, 1)));
 	if (s.type != TString) {
-		delete(&s);
+		track(&s);
 		return r;
 	}
 
@@ -75,12 +75,11 @@ Value eval_import(Value *ctx, Value *args)
 		fprintf(stderr, "error: could not open: %s\n", (char *)s.string->d);
 		exit(1);
 	}
-	delete(&s);
+	track(&s);
 
 	while (parse(&e, f) >= 0)
 		set(&r, eval(ctx, &e));
-	delete(&e);
-	unmark(&r);
+	track(&e);
 	return r;
 }
 
@@ -108,24 +107,28 @@ Value eval_print(Value *ctx, Value *args)
 		putchar(' ');
 	}
 	printf("\n");
-	unmark(&v);
 	return v;
 }
 
 Value eval_set(Value *ctx, Value *args)
 {
-	Value d = nil;
+	Value d = nil, v = nil;
 
 	set(&d, eval_weak(ctx, &list(args, 1)));
-	if (d.type == TWeak)
-		set(d.weak, eval(ctx, &list(args, 2)));
-	delete(&d);
+	if (d.type == TWeak) {
+		v = eval(ctx, &list(args, 2));
+		set(d.weak, v);
+		track(&v);
+	}
+	track(&d);
 	return nil;
 }
 
 Value eval_def(Value *ctx, Value *args)
 {
-	set(mapget(ctx, &list(args, 1)), eval(ctx, &list(args, 2)));
+	Value v = eval(ctx, &list(args, 2));
+	set(mapget(ctx, &list(args, 1)), v);
+	track(&v);
 	return nil;
 }
 
@@ -138,7 +141,6 @@ Value eval_lambda(Value *ctx, Value *args)
 	set(&list(&v, 0), *ctx);
 	for (i = 1; i < args->list->len; i++)
 		set(&list(&v, i), list(args, i));
-	unmark(&v);
 	return v;
 }
 
@@ -147,7 +149,6 @@ Value eval_quote(Value *ctx, Value *args)
 	Value v = nil;
 
 	set(&v, list(args, 1));
-	unmark(&v);
 	return v;
 }
 
@@ -158,7 +159,6 @@ Value eval_eval(Value *ctx, Value *args)
 	if (args->list->len > 1)
 		set(&v, eval(ctx, &list(args, 1)));
 	set(&v, eval(ctx, &v));
-	unmark(&v);
 	return v;
 }
 
@@ -174,7 +174,6 @@ Value eval_weak(Value *ctx, Value *args)
 				break;
 			scope = getvar(scope, " ");
 		}
-		unmark(&v);
 		return v;
 	}
 	if (args->type != TList)
@@ -184,7 +183,6 @@ Value eval_weak(Value *ctx, Value *args)
 		set(&v, v.func(ctx, args));
 	else if (v.type == TList)
 		set(&v, run_lambda(ctx, &v, args));
-	unmark(&v);
 	return v;
 }
 
@@ -195,7 +193,6 @@ Value eval(Value *ctx, Value *args)
 	set(&v, eval_weak(ctx, args));
 	if (v.type == TWeak)
 		set(&v, *v.weak);
-	unmark(&v);
 	return v;
 }
 
@@ -212,8 +209,7 @@ Value run_lambda(Value *ctx, Value *lbd, Value *args)
 		set(mapget(&lclctx, &list(vars, i)), eval(ctx, &list(args, i+1)));
 	for (i = 2; i < lbd->list->len; i++)
 		set(&v, eval(&lclctx, &list(lbd, i)));
-	delete(&lclctx);
-	unmark(&v);
+	track(&lclctx);
 	return v;
 }
 
@@ -265,7 +261,7 @@ void init(Value *ctx)
 int main(int argc, char *argv[])
 {
 	FILE *f;
-	Value e = nil, r = nil;
+	Value e = nil, r;
 
 	if (argc > 1) {
 		if (!(f = fopen(argv[1], "r"))) {
@@ -285,6 +281,7 @@ int main(int argc, char *argv[])
 		if (parse(&e, f) < 0)
 			break;
 		set(&r, eval(&global, &e));
+		track(&e);
 	}
 	exit(0);
 }

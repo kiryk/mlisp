@@ -38,8 +38,10 @@ Value *mapget(Value *map, Value *key)
 	unsigned h = hash(key);
 	Value *group = &list(map, h);
 
-	if (group->type != TList)
+	if (group->type != TList) {
 		set(group, make(TList));
+		track(group);
+	}
 
 	/* i += 2 because it's a list of key-val pairs */
 	for (i = 0; i < group->list->len; i += 2)
@@ -58,7 +60,7 @@ Value *getvar(Value *map, char *key)
 	string(&k, len-1) = '\0';
 	strncpy(k.symbol->d, key, len);
 	r = mapget(map, &k);
-	delete(&k);
+	track(&k);
 	return r;
 }
 
@@ -70,13 +72,15 @@ void setvar(Value *map, char *key, Value v)
 /* interfaces for map and list usage inside the language */
 Value eval_map_literal(Value *ctx, Value *args)
 {
-	Value m = nil;
+	Value m = nil, v = nil;
 	int i;
 
 	set(&m, make(TList));
-	for (i = 1; i < args->list->len; i += 2)
-		set(mapget(&m, &list(args, i)), eval(ctx, &list(args, i+1)));
-	unmark(&m);
+	for (i = 1; i < args->list->len; i += 2) {
+		set(&v, eval(ctx, &list(args, i+1)));
+		set(mapget(&m, &list(args, i)), v);
+	}
+	track(&v);
 	return m;
 }
 
@@ -87,20 +91,22 @@ Value eval_map_get(Value *ctx, Value *args)
 	set(&m, eval(ctx, &list(args, 1)));
 	set(&k, eval(ctx, &list(args, 2)));
 	v.weak = mapget(&m, &k);
-	delete(&m);
-	delete(&k);
+	track(&m);
+	track(&k);
 	return v;
 }
 
 Value eval_list_literal(Value *ctx, Value *args)
 {
-	Value l = nil;
+	Value l = nil, v = nil;
 	int i;
 
 	set(&l, make(TList));
-	for (i = 1; i < args->list->len; i++)
-		set(&list(&l, i-1), eval(ctx, &list(args, i)));
-	unmark(&l);
+	for (i = 1; i < args->list->len; i++) {
+		set(&v, eval(ctx, &list(args, i)));
+		set(&list(&l, i-1), v);
+	}
+	track(&v);
 	return l;
 }
 
@@ -111,7 +117,7 @@ Value eval_list_get(Value *ctx, Value *args)
 	set(&l, eval(ctx, &list(args, 1)));
 	set(&i, eval(ctx, &list(args, 2)));
 	v.weak = &list(&l, i.number);
-	delete(&l);
-	delete(&i);
+	track(&l);
+	track(&i);
 	return v;
 }

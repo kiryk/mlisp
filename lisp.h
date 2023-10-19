@@ -38,7 +38,12 @@ typedef struct Object {
 		Other o;
 		Vector v;
 	};
-	int refc;
+	struct Object *next;
+	struct {
+		unsigned mark : 1;
+		unsigned root : 1;
+		unsigned list : 1;
+	};
 } Object;
 
 typedef struct Value {
@@ -56,6 +61,7 @@ typedef struct Value {
 } Value;
 
 /* main.c */
+extern Value global;
 Value eval(Value *ctx, Value *v);
 Value eval_weak(Value *ctx, Value *v);
 
@@ -63,13 +69,9 @@ Value eval_weak(Value *ctx, Value *v);
 void *access(Vector *v, int n, int sz);
 
 /* mem.c */
-Object *alloc(void);
-Value make(enum Type type);
 Value pack(void *d, void (*delete)(void*));
-void mark(Value *v);
-void unmark(Value *v);
-void delete(Value *v);
-void check(Value *v);
+Value make(enum Type type);
+void track(Value *v);
 void set(Value *d, Value s);
 
 /* map.c */
