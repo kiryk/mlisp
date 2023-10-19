@@ -4,11 +4,67 @@
 
 int _objects = 0;
 
-Object *alloc(void)
+static int turn = 0;
+
+static Object *objects = 0;
+
+static Object *alloc(void)
 {
 	++_objects;
-	Object *ob = calloc(1, sizeof(Object));
-	return ob;
+	Object *o = calloc(1, sizeof(Object));
+	o->mark = turn;
+	o->next = objects;
+	objects = o;
+	return o;
+}
+
+static void delete(Object *o)
+{
+	free(o->v.d);
+	free(o);
+	--_objects;
+}
+
+static void mark(Value *v)
+{
+	int i;
+
+	if (isobject(*v)) {
+		if (v->object->mark == turn)
+			return;
+		v->object->mark = turn;
+	}
+	if (islist(*v)) {
+		for (i = 0; i < v->list->len; i++)
+			mark(&vector(Value, v->list, i));
+	}
+}
+
+static void sweep() {
+	Object *o;
+	Object *next, *prev = 0;
+
+	for (o = objects; o; o = next) {
+		next = o->next;
+		if (o->mark == turn) {
+			prev = o;
+			continue;
+		}
+		if (prev)
+			prev->next = next;
+		else
+			objects = next;
+		delete(o);
+	}
+}
+
+Value pack(void *d, void (*delete)(void*))
+{
+	Value v = make(TOther);
+
+	v.other->d = d;
+	v.other->delete = delete;
+	return v;
 }
 
 Value make(enum Type type)
@@ -21,57 +77,13 @@ Value make(enum Type type)
 	return v;
 }
 
-Value pack(void *d, void (*delete)(void*))
-{
-	Value v = make(TOther);
-
-	v.other->d = d;
-	v.other->delete = delete;
-	return v;
-}
-
-void mark(Value *v)
-{
-	if (isobject(*v))
-		++v->object->refc;
-}
-
-void unmark(Value *v)
-{
-	if (isobject(*v))
-		--v->object->refc;
-}
-
-void check(Value *v)
-{
-	if (isobject(*v) && v->object->refc <= 0) {
-		if (isother(*v)) {
-			if (v->other->delete)
-				v->other->delete(v->other->d);
-		} else {
-			if (islist(*v)) {
-				int i;
-
-				for (i = 0; i < v->list->len; i++)
-					delete(&vector(Value, v->list, i));
-			}
-			free(v->object->v.d);
-		}
-		free(v->object);
-		v->type = TNil;
-		--_objects;
-	}
-}
-
-void delete(Value *v)
-{
-	unmark(v);
-	check(v);
+void collect(Value *v) {
+	turn = !turn;
+	mark(v);
+	sweep();
 }
 
 void set(Value *d, Value s)
 {
-	mark(&s);
-	delete(d);
 	*d = s;
 }

@@ -53,7 +53,6 @@ Value eval_write(Value *ctx, Value *args)
 	else
 		set(&v, *ctx);
 	dump(&v, 0);
-	unmark(&v);
 	putchar('\n');
 	return v;
 }

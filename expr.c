@@ -11,8 +11,6 @@
 			set(&r, list(&a, 0)); \
 		for (i = 1; i < a.list->len; i++) \
 			r.number op ## = list(&a, i).number; \
-		delete(&a); \
-		unmark(&r); \
 		return r; \
 	}
 
@@ -33,8 +31,6 @@
 				break; \
 			} \
 		} \
-		delete(&a); \
-		unmark(&r); \
 		return r; \
 	}
 
@@ -49,7 +45,6 @@
 			if (v.type op TNil) \
 				break; \
 		} \
-		unmark(&v); \
 		return v; \
 	}
 
@@ -64,8 +59,6 @@ Value prepargs(Value *ctx, Value *args)
 			continue;
 		set(&list(&v, j++), t);
 	}
-	delete(&t);
-	unmark(&v);
 	return v;
 }
 
@@ -76,7 +69,6 @@ Value eval_do(Value *ctx, Value *args)
 
 	for (i = 1; i < args->list->len; i++)
 		set(&r, eval(ctx, &list(args, i)));
-	unmark(&r);
 	return r;
 }
 
@@ -89,7 +81,6 @@ Value eval_if(Value *ctx, Value *args)
 		set(&r, eval(ctx, &list(args, 2)));
 	else
 		set(&r, eval(ctx, &list(args, 3)));
-	unmark(&r);
 	return r;
 }
 
@@ -105,8 +96,6 @@ Value eval_while(Value *ctx, Value *args)
 		for (i = 2; i < args->list->len; i++)
 			set(&r, eval(ctx, &list(args, i)));
 	}
-	delete(&c);
-	unmark(&r);
 	return r;
 }
 
@@ -117,7 +106,6 @@ Value eval_len(Value *ctx, Value *args)
 	set(&v, eval(ctx, &list(args, 1)));
 	if (isobject(v) && !isother(v))
 		l.number = v.list->len;
-	delete(&v);
 	return l;
 }
 
@@ -131,8 +119,6 @@ Value eval_mod(Value *ctx, Value *args)
 		set(&r, list(&a, 0));
 	for (i = 1; i < a.list->len; i++)
 		r.number = (long int)r.number % (long int)list(&a, i).number;
-	delete(&a);
-	unmark(&r);
 	return r;
 }
 
@@ -142,7 +128,6 @@ Value eval_not(Value *ctx, Value *args)
 
 	set(&v, eval(ctx, &list(args, 1)));
 	set(&v, make(v.type == TNil? TNumber : TNil));
-	unmark(&v);
 	return v;
 }
 

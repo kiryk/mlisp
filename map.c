@@ -58,7 +58,6 @@ Value *getvar(Value *map, char *key)
 	string(&k, len-1) = '\0';
 	strncpy(k.symbol->d, key, len);
 	r = mapget(map, &k);
-	delete(&k);
 	return r;
 }
 
@@ -76,7 +75,6 @@ Value eval_map_literal(Value *ctx, Value *args)
 	set(&m, make(TList));
 	for (i = 1; i < args->list->len; i += 2)
 		set(mapget(&m, &list(args, i)), eval(ctx, &list(args, i+1)));
-	unmark(&m);
 	return m;
 }
 
@@ -87,8 +85,6 @@ Value eval_map_get(Value *ctx, Value *args)
 	set(&m, eval(ctx, &list(args, 1)));
 	set(&k, eval(ctx, &list(args, 2)));
 	v.weak = mapget(&m, &k);
-	delete(&m);
-	delete(&k);
 	return v;
 }
 
@@ -100,7 +96,6 @@ Value eval_list_literal(Value *ctx, Value *args)
 	set(&l, make(TList));
 	for (i = 1; i < args->list->len; i++)
 		set(&list(&l, i-1), eval(ctx, &list(args, i)));
-	unmark(&l);
 	return l;
 }
 
@@ -111,7 +106,5 @@ Value eval_list_get(Value *ctx, Value *args)
 	set(&l, eval(ctx, &list(args, 1)));
 	set(&i, eval(ctx, &list(args, 2)));
 	v.weak = &list(&l, i.number);
-	delete(&l);
-	delete(&i);
 	return v;
 }

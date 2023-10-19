@@ -38,7 +38,8 @@ typedef struct Object {
 		Other o;
 		Vector v;
 	};
-	int refc;
+	struct Object *next;
+	int mark;
 } Object;
 
 typedef struct Value {
@@ -63,14 +64,10 @@ Value eval_weak(Value *ctx, Value *v);
 void *access(Vector *v, int n, int sz);
 
 /* mem.c */
-Object *alloc(void);
 Value make(enum Type type);
 Value pack(void *d, void (*delete)(void*));
-void mark(Value *v);
-void unmark(Value *v);
-void delete(Value *v);
-void check(Value *v);
 void set(Value *d, Value s);
+void collect(Value *v);
 
 /* map.c */
 Value eval_map_literal(Value *ctx, Value *args);
